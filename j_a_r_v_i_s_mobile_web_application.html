@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#030814">
+  <title>J.A.R.V.I.S. Mobile OS</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Orbitron & Rajdhani -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            stark: {
+              cyan: '#00f3ff',
+              blue: '#0066ff',
+              dark: '#030814',
+              card: 'rgba(8, 19, 43, 0.85)',
+              glow: 'rgba(0, 243, 255, 0.25)',
+              gold: '#ffb700',
+              red: '#ff2a5f'
+            }
+          },
+          fontFamily: {
+            orbitron: ['Orbitron', 'sans-serif'],
+            rajdhani: ['Rajdhani', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Dynamic Inline Web Manifest for PWA Support -->
+  <script>
+    (function() {
+      const manifest = {
+        name: "J.A.R.V.I.S. AI Assistant",
+        short_name: "JARVIS",
+        start_url: ".",
+        display: "standalone",
+        background_color: "#030814",
+        theme_color: "#030814",
+        icons: [
+          {
+            src: "https://img.icons8.com/isometric-line/512/00f3ff/iron-man.png",
+            sizes: "512x512",
+            type: "image/png"
+          }
+        ]
+      };
+      const stringManifest = JSON.stringify(manifest);
+      const blob = new Blob([stringManifest], {type: 'application/json'});
+      const manifestUrl = URL.createObjectURL(blob);
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = manifestUrl;
+      document.head.appendChild(link);
+    })();
+  </script>
+
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input, textarea {
+      user-select: text;
+    }
+
+    body {
+      background-color: #030814;
+      color: #00f3ff;
+      font-family: 'Rajdhani', sans-serif;
+      background-image: 
+        radial-gradient(circle at 50% 30%, rgba(0, 102, 255, 0.15) 0%, transparent 70%),
+        linear-gradient(to right, rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 20px 20px, 20px 20px;
+      touch-action: manipulation;
+    }
+
+    /* Custom Scrollbar for Touch Containers */
+    ::-webkit-scrollbar {
+      width: 3px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 243, 255, 0.3);
+      border-radius: 3px;
+    }
+
+    /* Arc Reactor & Core Animations */
+    @keyframes spin-slow {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes spin-reverse {
+      0% { transform: rotate(360deg); }
+      100% { transform: rotate(0deg); }
+    }
+    @keyframes pulse-core {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 12px rgba(0, 243, 255, 0.8)); }
+      50% { transform: scale(1.08); filter: drop-shadow(0 0 25px rgba(0, 243, 255, 1)); }
+    }
+    @keyframes pulse-speaking {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(255, 183, 0, 0.8)); }
+      50% { transform: scale(1.15); filter: drop-shadow(0 0 30px rgba(255, 183, 0, 1)); }
+    }
+
+    .rotate-slow { animation: spin-slow 18s linear infinite; }
+    .rotate-reverse { animation: spin-reverse 12s linear infinite; }
+    .pulse-reactor { animation: pulse-core 2.5s ease-in-out infinite; }
+    .pulse-speaking { animation: pulse-speaking 1s ease-in-out infinite; }
+
+    .hud-card {
+      border: 1px solid rgba(0, 243, 255, 0.25);
+      background: rgba(8, 19, 43, 0.8);
+      backdrop-filter: blur(8px);
+      box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.05), 0 4px 20px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+    .hud-card::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: -1px;
+      width: 6px; height: 6px;
+      border-top: 2px solid #00f3ff;
+      border-left: 2px solid #00f3ff;
+    }
+    .hud-card::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; right: -1px;
+      width: 6px; height: 6px;
+      border-bottom: 2px solid #00f3ff;
+      border-right: 2px solid #00f3ff;
+    }
+
+    /* Waveform Bars */
+    .wave-bar {
+      width: 3px;
+      background: #00f3ff;
+      border-radius: 2px;
+      height: 6px;
+      transition: height 0.15s ease;
+    }
+    .active-wave .wave-bar {
+      animation: wave 1s ease-in-out infinite;
+    }
+    @keyframes wave {
+      0%, 100% { height: 4px; }
+      50% { height: 22px; }
+    }
+    .active-wave .wave-bar:nth-child(1) { animation-delay: 0.1s; }
+    .active-wave .wave-bar:nth-child(2) { animation-delay: 0.3s; }
+    .active-wave .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+    .active-wave .wave-bar:nth-child(4) { animation-delay: 0.4s; }
+    .active-wave .wave-bar:nth-child(5) { animation-delay: 0.15s; }
+
+    /* Safe Area Padding for Mobile Notch / Home Bar */
+    .safe-top { padding-top: env(safe-area-inset-top, 12px); }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 12px); }
+  </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col justify-between select-none">
+
+  <!-- TOP MOBILE SYSTEM HUD HEADER -->
+  <header class="hud-card border-x-0 border-t-0 px-4 py-2 flex items-center justify-between z-20 safe-top">
+    <div class="flex items-center gap-2">
+      <!-- Mini Core Graphic -->
+      <div class="relative w-8 h-8 flex items-center justify-center">
+        <div class="absolute inset-0 rounded-full border border-dashed border-stark-cyan rotate-slow"></div>
+        <i class="fa-solid fa-atom text-stark-cyan text-sm pulse-reactor"></i>
+      </div>
+      <div>
+        <h1 class="font-orbitron font-extrabold text-sm tracking-wider text-stark-cyan flex items-center gap-1">
+          J.A.R.V.I.S.
+          <span class="text-[9px] px-1 py-0.2 rounded border border-stark-cyan/40 bg-stark-cyan/10 font-normal">MOBILE v4.5</span>
+        </h1>
+        <div class="text-[10px] text-stark-cyan/60 font-orbitron tracking-widest flex items-center gap-2">
+          <span id="mobile-clock">00:00</span>
+          <span>•</span>
+          <span id="system-status" class="text-stark-cyan font-semibold">ONLINE</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Header Actions -->
+    <div class="flex items-center gap-2">
+      <button id="pwa-install-btn" class="hidden text-xs px-2 py-1 rounded border border-stark-gold text-stark-gold bg-stark-gold/10 font-orbitron active:scale-95 transition-all">
+        <i class="fa-solid fa-download mr-1"></i> INSTALL
+      </button>
+      <button id="api-key-btn" class="p-2 rounded border border-stark-cyan/40 bg-stark-cyan/10 text-stark-cyan active:scale-95 transition-all" title="Set Gemini API Key">
+        <i class="fa-solid fa-key text-xs"></i>
+      </button>
+      <button id="config-btn" class="p-2 rounded border border-stark-cyan/40 bg-stark-cyan/10 text-stark-cyan active:scale-95 transition-all" title="System Settings">
+        <i class="fa-solid fa-sliders text-xs"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN VIEWPORT CONTAINER (CONTAINING TABS) -->
+  <main class="flex-1 relative overflow-hidden flex flex-col p-3 gap-3">
+
+    <!-- ARC REACTOR Core Visualizer & Voice State Card -->
+    <section class="hud-card rounded-xl p-3 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <!-- Interactive Animated Core -->
+        <div id="reactor-core" class="relative w-16 h-16 flex items-center justify-center shrink-0 cursor-pointer">
+          <div class="absolute inset-0 rounded-full border-2 border-dashed border-stark-cyan/50 rotate-slow"></div>
+          <div class="absolute inset-1.5 rounded-full border border-stark-blue/70 rotate-reverse"></div>
+          <div class="absolute inset-3.5 rounded-full border-2 border-stark-cyan/40 flex items-center justify-center">
+            <div id="reactor-inner" class="w-7 h-7 rounded-full bg-stark-cyan/20 border border-stark-cyan flex items-center justify-center pulse-reactor">
+              <i id="reactor-icon" class="fa-solid fa-power-off text-stark-cyan text-xs"></i>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-[10px] font-orbitron text-stark-cyan/60 tracking-widest uppercase">STARK CORE MONITOR</div>
+          <div id="core-state-text" class="font-orbitron text-xs font-bold text-stark-cyan tracking-wider">AWAITING DIRECTIVE</div>
+          <div class="text-[11px] text-slate-300 mt-0.5">Tap mic below or type command</div>
+        </div>
+      </div>
+
+      <!-- Live Voice Waveform -->
+      <div id="voice-wave" class="flex items-end gap-1 h-6 pr-1">
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+      </div>
+    </section>
+
+    <!-- TAB CONTENT PANELS -->
+    
+    <!-- TAB 1: ASSISTANT CHAT LOG -->
+    <section id="panel-chat" class="tab-panel flex-1 hud-card rounded-xl flex flex-col overflow-hidden">
+      <!-- Chat Header -->
+      <div class="px-3 py-2 border-b border-stark-cyan/20 bg-stark-dark/80 flex items-center justify-between text-xs">
+        <span class="font-orbitron text-stark-cyan/80 tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-terminal text-stark-cyan"></i> SECURE TERMINAL LOG
+        </span>
+        <button id="clear-chat-btn" class="text-[10px] text-stark-cyan/60 hover:text-stark-cyan">
+          <i class="fa-solid fa-trash-can mr-1"></i> Clear
+        </button>
+      </div>
+
+      <!-- Message History Container -->
+      <div id="chat-container" class="flex-1 p-3 overflow-y-auto space-y-3 font-rajdhani text-sm">
+        <!-- Initial JARVIS Welcome -->
+        <div class="flex gap-2.5 max-w-[90%]">
+          <div class="w-7 h-7 rounded border border-stark-cyan/60 bg-stark-cyan/10 flex items-center justify-center text-stark-cyan shrink-0 text-xs">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center gap-1.5 mb-0.5">
+              <span class="font-orbitron text-[10px] text-stark-cyan font-bold tracking-wider">J.A.R.V.I.S.</span>
+            </div>
+            <div class="p-2.5 rounded-r-lg rounded-bl-lg bg-stark-dark/90 border border-stark-cyan/30 text-slate-200 leading-snug">
+              At your service, Boss. All core systems are running at optimal parameters on your mobile device. How may I assist you?
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Directive Chips -->
+      <div class="p-2 border-t border-stark-cyan/15 bg-stark-dark/60 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
+        <button class="quick-chip text-[11px] px-2.5 py-1 rounded-full border border-stark-cyan/30 bg-stark-cyan/5 text-stark-cyan active:bg-stark-cyan/20 transition-all shrink-0">
+          <i class="fa-solid fa-sun mr-1"></i> Daily Briefing
+        </button>
+        <button class="quick-chip text-[11px] px-2.5 py-1 rounded-full border border-stark-cyan/30 bg-stark-cyan/5 text-stark-cyan active:bg-stark-cyan/20 transition-all shrink-0">
+          <i class="fa-solid fa-code mr-1"></i> Code Assistant
+        </button>
+        <button class="quick-chip text-[11px] px-2.5 py-1 rounded-full border border-stark-cyan/30 bg-stark-cyan/5 text-stark-cyan active:bg-stark-cyan/20 transition-all shrink-0">
+          <i class="fa-solid fa-shield-halved mr-1"></i> Security Scan
+        </button>
+        <button class="quick-chip text-[11px] px-2.5 py-1 rounded-full border border-stark-cyan/30 bg-stark-cyan/5 text-stark-cyan active:bg-stark-cyan/20 transition-all shrink-0">
+          <i class="fa-solid fa-envelope mr-1"></i> Draft Email
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 2: MEMORY VAULT -->
+    <section id="panel-vault" class="tab-panel hidden flex-1 hud-card rounded-xl flex flex-col overflow-hidden p-3 gap-3">
+      <div class="flex items-center justify-between border-b border-stark-cyan/20 pb-2">
+        <h3 class="font-orbitron text-xs font-bold text-stark-cyan tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-database"></i> MEMORY CORE VAULT
+        </h3>
+        <button id="add-vault-btn" class="text-xs px-2 py-1 rounded border border-stark-cyan bg-stark-cyan/10 text-stark-cyan font-orbitron active:scale-95">
+          + ADD MEMORY
+        </button>
+      </div>
+
+      <div id="vault-list" class="flex-1 overflow-y-auto space-y-2 pr-1">
+        <!-- Dynamically rendered local notes -->
+      </div>
+    </section>
+
+    <!-- TAB 3: COMMAND TOOLS -->
+    <section id="panel-tools" class="tab-panel hidden flex-1 hud-card rounded-xl flex flex-col overflow-hidden p-3 gap-3">
+      <h3 class="font-orbitron text-xs font-bold text-stark-cyan tracking-wider border-b border-stark-cyan/20 pb-2 flex items-center gap-1.5">
+        <i class="fa-solid fa-sliders text-stark-cyan"></i> DIRECTIVE CONTROLS
+      </h3>
+
+      <div class="grid grid-cols-2 gap-2.5 overflow-y-auto">
+        <button class="quick-tool-card p-3 rounded-lg border border-stark-cyan/30 bg-stark-dark/70 text-left active:bg-stark-cyan/20 transition-all flex flex-col gap-1" data-cmd="Provide a high-level cybersecurity briefing for my mobile device and cloud context.">
+          <i class="fa-solid fa-shield-halved text-stark-cyan text-lg"></i>
+          <span class="font-orbitron text-xs font-bold text-stark-cyan">Security Briefing</span>
+          <span class="text-[10px] text-slate-400">Run security protocols</span>
+        </button>
+
+        <button class="quick-tool-card p-3 rounded-lg border border-stark-cyan/30 bg-stark-dark/70 text-left active:bg-stark-cyan/20 transition-all flex flex-col gap-1" data-cmd="Summarize my typical daily productivity framework and pending high-priority goals.">
+          <i class="fa-solid fa-calendar-check text-stark-cyan text-lg"></i>
+          <span class="font-orbitron text-xs font-bold text-stark-cyan">Daily Overview</span>
+          <span class="text-[10px] text-slate-400">Schedule & Priorities</span>
+        </button>
+
+        <button class="quick-tool-card p-3 rounded-lg border border-stark-cyan/30 bg-stark-dark/70 text-left active:bg-stark-cyan/20 transition-all flex flex-col gap-1" data-cmd="Acts as a senior tech advisor. Explain the latest breakthroughs in AI and quantum computing concisely.">
+          <i class="fa-solid fa-microchip text-stark-cyan text-lg"></i>
+          <span class="font-orbitron text-xs font-bold text-stark-cyan">Tech Insights</span>
+          <span class="text-[10px] text-slate-400">AI & Tech Digest</span>
+        </button>
+
+        <button class="quick-tool-card p-3 rounded-lg border border-stark-cyan/30 bg-stark-dark/70 text-left active:bg-stark-cyan/20 transition-all flex flex-col gap-1" data-cmd="Help me draft an articulate, polite, and firm professional response to a key business partner.">
+          <i class="fa-solid fa-paper-plane text-stark-cyan text-lg"></i>
+          <span class="font-orbitron text-xs font-bold text-stark-cyan">Composter Tool</span>
+          <span class="text-[10px] text-slate-400">Draft Communications</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM INPUT BAR & FAB MIC BUTTON -->
+  <footer class="hud-card border-x-0 border-b-0 p-3 bg-stark-dark/90 z-20 safe-bottom flex flex-col gap-2">
+    <form id="chat-form" class="flex items-center gap-2">
+      <!-- Input Text Field -->
+      <div class="flex-1 relative">
+        <input type="text" id="user-input" autocomplete="off" placeholder="Command J.A.R.V.I.S..." class="w-full bg-stark-card/90 border border-stark-cyan/40 rounded-lg px-3 py-2.5 text-sm text-stark-cyan placeholder-stark-cyan/40 focus:outline-none focus:border-stark-cyan font-rajdhani">
+      </div>
+
+      <!-- Text Submit Button -->
+      <button type="submit" id="send-btn" class="h-10 px-4 rounded-lg bg-stark-cyan text-stark-dark font-orbitron font-bold text-xs tracking-wider active:scale-95 transition-all flex items-center justify-center shrink-0">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+
+      <!-- FAB Push-to-Talk Voice Button -->
+      <button type="button" id="mic-fab" class="w-11 h-11 rounded-full border-2 border-stark-cyan bg-stark-cyan/20 text-stark-cyan flex items-center justify-center active:scale-90 transition-all shrink-0 relative shadow-lg shadow-stark-cyan/20" title="Push to Talk">
+        <i id="mic-icon" class="fa-solid fa-microphone text-base"></i>
+        <span id="mic-pulse" class="hidden absolute inset-0 rounded-full border-2 border-stark-cyan animate-ping"></span>
+      </button>
+    </form>
+
+    <!-- BOTTOM TAB NAVIGATION BAR -->
+    <nav class="flex items-center justify-around pt-1 border-t border-stark-cyan/15 font-orbitron text-[10px]">
+      <button id="nav-chat" class="nav-tab active-tab text-stark-cyan flex flex-col items-center gap-0.5 py-1">
+        <i class="fa-solid fa-comments text-sm"></i>
+        <span>TERMINAL</span>
+      </button>
+      <button id="nav-vault" class="nav-tab text-stark-cyan/50 flex flex-col items-center gap-0.5 py-1">
+        <i class="fa-solid fa-database text-sm"></i>
+        <span>VAULT</span>
+      </button>
+      <button id="nav-tools" class="nav-tab text-stark-cyan/50 flex flex-col items-center gap-0.5 py-1">
+        <i class="fa-solid fa-bolt text-sm"></i>
+        <span>TOOLS</span>
+      </button>
+    </nav>
+  </footer>
+
+  <!-- CONFIGURATION MODAL -->
+  <div id="config-modal" class="hidden fixed inset-0 bg-stark-dark/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="hud-card border border-stark-cyan/50 rounded-xl w-full max-w-sm p-4 space-y-4">
+      <div class="flex items-center justify-between border-b border-stark-cyan/30 pb-2">
+        <h2 class="font-orbitron font-bold text-xs text-stark-cyan flex items-center gap-2">
+          <i class="fa-solid fa-sliders"></i> JARVIS CONFIGURATION
+        </h2>
+        <button id="close-config-btn" class="text-stark-cyan/60 hover:text-stark-cyan text-lg"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Speech Options -->
+      <div class="space-y-2">
+        <label class="text-xs text-stark-cyan/80 block font-orbitron">VOICE SELECTION</label>
+        <select id="voice-select" class="w-full bg-stark-dark border border-stark-cyan/40 rounded p-2 text-xs text-stark-cyan focus:outline-none"></select>
+        
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <div>
+            <label class="text-[10px] text-stark-cyan/70 block">PITCH: <span id="pitch-val">1.0</span></label>
+            <input type="range" id="voice-pitch" min="0.6" max="1.4" step="0.1" value="1.0" class="w-full accent-stark-cyan">
+          </div>
+          <div>
+            <label class="text-[10px] text-stark-cyan/70 block">RATE: <span id="rate-val">1.0</span></label>
+            <input type="range" id="voice-rate" min="0.7" max="1.4" step="0.1" value="1.0" class="w-full accent-stark-cyan">
+          </div>
+        </div>
+      </div>
+
+      <!-- System Persona -->
+      <div class="space-y-1">
+        <label class="text-xs text-stark-cyan/80 block font-orbitron">PERSONA DIRECTIVE</label>
+        <textarea id="system-prompt-input" rows="3" class="w-full bg-stark-dark border border-stark-cyan/40 rounded p-2 text-xs text-stark-cyan focus:outline-none font-rajdhani">You are J.A.R.V.I.S., a highly intelligent, crisp, polite, and articulate AI assistant inspired by Tony Stark's assistant. Always address the user respectfully as 'Boss' or 'Sir'. Provide immediate, insightful, and concise mobile responses.</textarea>
+      </div>
+
+      <div class="pt-1 flex justify-end">
+        <button id="save-config-btn" class="px-4 py-2 rounded bg-stark-cyan text-stark-dark font-orbitron font-bold text-xs hover:bg-stark-cyan/80 transition-all">SAVE SETTINGS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API KEY MODAL -->
+  <div id="api-modal" class="hidden fixed inset-0 bg-stark-dark/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="hud-card border border-stark-gold/60 rounded-xl w-full max-w-sm p-4 space-y-3">
+      <div class="flex items-center justify-between border-b border-stark-gold/30 pb-2">
+        <h2 class="font-orbitron font-bold text-xs text-stark-gold flex items-center gap-2">
+          <i class="fa-solid fa-key"></i> GEMINI API ACCESS
+        </h2>
+        <button id="close-api-btn" class="text-stark-gold/60 hover:text-stark-gold text-lg"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="text-xs text-slate-300">Enter your custom Google Gemini API Key to enable independent mobile operation, or leave empty to use default canvas runtime key.</p>
+      <input type="password" id="custom-api-key" placeholder="AIzaSy..." class="w-full bg-stark-dark border border-stark-gold/40 rounded p-2.5 text-xs text-stark-gold placeholder-stark-gold/30 focus:outline-none">
+      <div class="flex justify-end gap-2">
+        <button id="save-api-btn" class="px-4 py-2 rounded bg-stark-gold text-stark-dark font-orbitron font-bold text-xs active:scale-95">SAVE KEY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // --- APP STATE ---
+    let voiceEnabled = true;
+    let selectedVoice = null;
+    let recognition = null;
+    let isListening = false;
+    let isSpeaking = false;
+    let customApiKey = localStorage.getItem('jarvis_api_key') || "";
+    let deferredPwaPrompt = null;
+
+    let memoryVault = JSON.parse(localStorage.getItem('jarvis_vault') || '[]');
+
+    const systemInstruction = "You are J.A.R.V.I.S., a highly intelligent, crisp, polite, and articulate AI personal assistant inspired by Tony Stark's assistant. Address the user as 'Sir' or 'Boss'. Provide concise, direct, intelligent responses optimized for a mobile screen.";
+
+    // --- DOM REFERENCES ---
+    const chatContainer = document.getElementById('chat-container');
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+    const micFab = document.getElementById('mic-fab');
+    const micIcon = document.getElementById('mic-icon');
+    const micPulse = document.getElementById('mic-pulse');
+    const voiceWave = document.getElementById('voice-wave');
+    const coreStateText = document.getElementById('core-state-text');
+    const reactorInner = document.getElementById('reactor-inner');
+    const reactorIcon = document.getElementById('reactor-icon');
+
+    // Modals
+    const configModal = document.getElementById('config-modal');
+    const apiModal = document.getElementById('api-modal');
+    const configBtn = document.getElementById('config-btn');
+    const apiKeyBtn = document.getElementById('api-key-btn');
+    const closeConfigBtn = document.getElementById('close-config-btn');
+    const closeApiBtn = document.getElementById('close-api-btn');
+    const saveConfigBtn = document.getElementById('save-config-btn');
+    const saveApiBtn = document.getElementById('save-api-btn');
+    const customApiKeyInput = document.getElementById('custom-api-key');
+
+    // Controls
+    const voiceSelect = document.getElementById('voice-select');
+    const voicePitch = document.getElementById('voice-pitch');
+    const voiceRate = document.getElementById('voice-rate');
+    const pitchVal = document.getElementById('pitch-val');
+    const rateVal = document.getElementById('rate-val');
+    const systemPromptInput = document.getElementById('system-prompt-input');
+
+    // --- INITIALIZATION ---
+    window.addEventListener('DOMContentLoaded', () => {
+      initClock();
+      initSpeechSynthesis();
+      initSpeechRecognition();
+      initTabs();
+      renderVault();
+      initPwaInstall();
+
+      voicePitch.addEventListener('input', () => pitchVal.textContent = voicePitch.value);
+      voiceRate.addEventListener('input', () => rateVal.textContent = voiceRate.value);
+
+      if (customApiKey) customApiKeyInput.value = customApiKey;
+    });
+
+    // Mobile Clock
+    function initClock() {
+      const updateClock = () => {
+        const now = new Date();
+        document.getElementById('mobile-clock').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      };
+      updateClock();
+      setInterval(updateClock, 10000);
+    }
+
+    // PWA Install Prompt Handler
+    function initPwaInstall() {
+      const pwaBtn = document.getElementById('pwa-install-btn');
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPwaPrompt = e;
+        pwaBtn.classList.remove('hidden');
+      });
+
+      pwaBtn.addEventListener('click', async () => {
+        if (!deferredPwaPrompt) return;
+        deferredPwaPrompt.prompt();
+        const { outcome } = await deferredPwaPrompt.userChoice;
+        if (outcome === 'accepted') {
+          pwaBtn.classList.add('hidden');
+        }
+        deferredPwaPrompt = null;
+      });
+    }
+
+    // Haptic Feedback for Mobile Devices
+    function triggerHaptic(type = 'light') {
+      if ('vibrate' in navigator) {
+        if (type === 'light') navigator.vibrate(15);
+        if (type === 'medium') navigator.vibrate(35);
+        if (type === 'success') navigator.vibrate([20, 50, 20]);
+      }
+    }
+
+    // Tab Navigation Switcher
+    function initTabs() {
+      const navChat = document.getElementById('nav-chat');
+      const navVault = document.getElementById('nav-vault');
+      const navTools = document.getElementById('nav-tools');
+
+      const panelChat = document.getElementById('panel-chat');
+      const panelVault = document.getElementById('panel-vault');
+      const panelTools = document.getElementById('panel-tools');
+
+      const tabs = [
+        { btn: navChat, panel: panelChat },
+        { btn: navVault, panel: panelVault },
+        { btn: navTools, panel: panelTools }
+      ];
+
+      tabs.forEach(({ btn, panel }) => {
+        btn.addEventListener('click', () => {
+          triggerHaptic('light');
+          tabs.forEach(t => {
+            t.btn.classList.remove('text-stark-cyan');
+            t.btn.classList.add('text-stark-cyan/50');
+            t.panel.classList.add('hidden');
+          });
+          btn.classList.remove('text-stark-cyan/50');
+          btn.classList.add('text-stark-cyan');
+          panel.classList.remove('hidden');
+        });
+      });
+    }
+
+    // GEMINI API INTEGRATION
+    async function fetchGeminiResponse(userPrompt) {
+      // Use user's custom key if provided, otherwise fallback to empty string ( canvas runtime inserted )
+      const apiKey = customApiKey || "";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      const payload = {
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+        systemInstruction: {
+          parts: [{ text: systemPromptInput.value || systemInstruction }]
+        }
+      };
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error(`Status ${response.status}`);
+
+        const data = await response.json();
+        const candidate = data.candidates?.[0];
+        if (candidate && candidate.content?.parts?.[0]?.text) {
+          return candidate.content.parts[0].text;
+        } else {
+          return "Anomalous response structure received, Boss. Please re-verify input.";
+        }
+      } catch (err) {
+        console.error("Gemini API Error:", err);
+        return "Warning: Strategic uplink interrupted. Please check API Key configuration or network connection.";
+      }
+    }
+
+    // SPEECH SYNTHESIS (TTS)
+    function initSpeechSynthesis() {
+      if (!('speechSynthesis' in window)) return;
+
+      const populateVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        voiceSelect.innerHTML = '';
+
+        voices.forEach((voice, index) => {
+          const option = document.createElement('option');
+          option.value = index;
+          option.textContent = `${voice.name} (${voice.lang})`;
+          if (voice.name.includes('Google') || voice.name.includes('Natural') || voice.name.includes('British') || voice.name.includes('English')) {
+            option.selected = true;
+            selectedVoice = voice;
+          }
+          voiceSelect.appendChild(option);
+        });
+
+        if (!selectedVoice && voices.length > 0) selectedVoice = voices[0];
+      };
+
+      populateVoices();
+      if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = populateVoices;
+      }
+
+      voiceSelect.addEventListener('change', (e) => {
+        const voices = window.speechSynthesis.getVoices();
+        selectedVoice = voices[e.target.value];
+      });
+    }
+
+    function speakText(text) {
+      if (!('speechSynthesis' in window)) return;
+
+      window.speechSynthesis.cancel();
+
+      const cleanText = text.replace(/[*_#`]/g, '');
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+
+      if (selectedVoice) utterance.voice = selectedVoice;
+      utterance.pitch = parseFloat(voicePitch.value);
+      utterance.rate = parseFloat(voiceRate.value);
+
+      utterance.onstart = () => {
+        isSpeaking = true;
+        voiceWave.classList.add('active-wave');
+        reactorInner.classList.remove('pulse-reactor');
+        reactorInner.classList.add('pulse-speaking');
+        coreStateText.textContent = "VOCAL TRANSMISSION ACTIVE";
+        reactorIcon.className = "fa-solid fa-volume-high text-stark-gold text-xs";
+      };
+
+      utterance.onend = utterance.onerror = () => {
+        isSpeaking = false;
+        voiceWave.classList.remove('active-wave');
+        reactorInner.classList.remove('pulse-speaking');
+        reactorInner.classList.add('pulse-reactor');
+        coreStateText.textContent = "AWAITING DIRECTIVE";
+        reactorIcon.className = "fa-solid fa-power-off text-stark-cyan text-xs";
+      };
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // SPEECH RECOGNITION (STT)
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        micFab.style.display = 'none';
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        isListening = true;
+        triggerHaptic('medium');
+        micFab.classList.add('bg-stark-cyan', 'text-stark-dark');
+        micPulse.classList.remove('hidden');
+        coreStateText.textContent = "LISTENING TO COMMAND...";
+        reactorIcon.className = "fa-solid fa-microphone text-stark-cyan text-xs";
+        voiceWave.classList.add('active-wave');
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        userInput.value = transcript;
+        handleUserMessage(transcript);
+      };
+
+      recognition.onerror = recognition.onend = () => {
+        stopListening();
+      };
+
+      micFab.addEventListener('click', () => {
+        if (isListening) {
+          recognition.stop();
+        } else {
+          window.speechSynthesis.cancel();
+          recognition.start();
+        }
+      });
+    }
+
+    function stopListening() {
+      isListening = false;
+      micFab.classList.remove('bg-stark-cyan', 'text-stark-dark');
+      micPulse.classList.add('hidden');
+      if (!isSpeaking) {
+        voiceWave.classList.remove('active-wave');
+        coreStateText.textContent = "AWAITING DIRECTIVE";
+        reactorIcon.className = "fa-solid fa-power-off text-stark-cyan text-xs";
+      }
+    }
+
+    // CHAT & SUBMIT HANDLER
+    chatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const message = userInput.value.trim();
+      if (!message) return;
+      handleUserMessage(message);
+    });
+
+    async function handleUserMessage(message) {
+      triggerHaptic('light');
+      userInput.value = '';
+      appendMessage('user', message);
+
+      const loadingId = appendLoadingIndicator();
+      coreStateText.textContent = "PROCESSING DIRECTIVE...";
+
+      const reply = await fetchGeminiResponse(message);
+
+      removeLoadingIndicator(loadingId);
+      appendMessage('jarvis', reply);
+      triggerHaptic('success');
+
+      speakText(reply);
+    }
+
+    function appendMessage(sender, text) {
+      const isUser = sender === 'user';
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `flex gap-2 max-w-[92%] ${isUser ? 'ml-auto flex-row-reverse' : ''}`;
+
+      const avatarHTML = isUser ? `
+        <div class="w-7 h-7 rounded border border-stark-gold/60 bg-stark-gold/10 flex items-center justify-center text-stark-gold shrink-0 text-xs">
+          <i class="fa-solid fa-user"></i>
+        </div>
+      ` : `
+        <div class="w-7 h-7 rounded border border-stark-cyan/60 bg-stark-cyan/10 flex items-center justify-center text-stark-cyan shrink-0 text-xs">
+          <i class="fa-solid fa-robot"></i>
+        </div>
+      `;
+
+      const cardStyle = isUser
+        ? 'bg-stark-cyan/15 border border-stark-gold/40 text-stark-gold rounded-l-lg rounded-br-lg'
+        : 'bg-stark-dark/90 border border-stark-cyan/30 text-slate-100 rounded-r-lg rounded-bl-lg';
+
+      const formattedText = text
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code class="bg-stark-dark px-1 py-0.5 rounded text-stark-cyan text-xs border border-stark-cyan/30">$1</code>');
+
+      msgDiv.innerHTML = `
+        ${avatarHTML}
+        <div class="flex-1">
+          <div class="p-2.5 ${cardStyle} leading-snug relative group">
+            <div>${formattedText}</div>
+          </div>
+        </div>
+      `;
+
+      chatContainer.appendChild(msgDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function appendLoadingIndicator() {
+      const id = 'loading-' + Date.now();
+      const msgDiv = document.createElement('div');
+      msgDiv.id = id;
+      msgDiv.className = 'flex gap-2 max-w-[90%]';
+      msgDiv.innerHTML = `
+        <div class="w-7 h-7 rounded border border-stark-cyan/60 bg-stark-cyan/10 flex items-center justify-center text-stark-cyan shrink-0 text-xs">
+          <i class="fa-solid fa-robot"></i>
+        </div>
+        <div class="flex-1">
+          <div class="p-2.5 rounded-r-lg rounded-bl-lg bg-stark-dark/90 border border-stark-cyan/30 text-stark-cyan flex items-center gap-2">
+            <i class="fa-solid fa-circle-notch fa-spin text-xs"></i>
+            <span class="font-orbitron text-[11px] tracking-wider">COMPUTING...</span>
+          </div>
+        </div>
+      `;
+      chatContainer.appendChild(msgDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      return id;
+    }
+
+    function removeLoadingIndicator(id) {
+      const elem = document.getElementById(id);
+      if (elem) elem.remove();
+    }
+
+    // QUICK CHIPS & QUICK TOOLS
+    document.querySelectorAll('.quick-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const text = btn.textContent.trim();
+        handleUserMessage(`Execute directive: ${text}`);
+      });
+    });
+
+    document.querySelectorAll('.quick-tool-card').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cmd = btn.getAttribute('data-cmd');
+        document.getElementById('nav-chat').click();
+        handleUserMessage(cmd);
+      });
+    });
+
+    // MEMORY VAULT
+    function renderVault() {
+      const list = document.getElementById('vault-list');
+      list.innerHTML = '';
+
+      if (memoryVault.length === 0) {
+        list.innerHTML = '<div class="text-xs text-stark-cyan/40 p-2 text-center">No memories archived.</div>';
+        return;
+      }
+
+      memoryVault.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'p-2.5 rounded border border-stark-cyan/20 bg-stark-dark/80 text-xs flex justify-between items-start gap-2';
+        div.innerHTML = `
+          <div class="text-slate-200">${item}</div>
+          <button onclick="deleteVaultItem(${index})" class="text-stark-cyan/40 hover:text-stark-red active:scale-90"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    document.getElementById('add-vault-btn').addEventListener('click', () => {
+      const text = prompt('Enter memory snippet to archive in JARVIS core:');
+      if (text && text.trim()) {
+        memoryVault.push(text.trim());
+        localStorage.setItem('jarvis_vault', JSON.stringify(memoryVault));
+        renderVault();
+      }
+    });
+
+    window.deleteVaultItem = function(index) {
+      memoryVault.splice(index, 1);
+      localStorage.setItem('jarvis_vault', JSON.stringify(memoryVault));
+      renderVault();
+    };
+
+    // CLEAR CHAT LOG
+    document.getElementById('clear-chat-btn').addEventListener('click', () => {
+      chatContainer.innerHTML = '';
+      appendMessage('jarvis', 'Terminal buffer cleared, Boss. Systems ready.');
+    });
+
+    // MODAL CONTROL EVENT LISTENERS
+    configBtn.addEventListener('click', () => configModal.classList.remove('hidden'));
+    closeConfigBtn.addEventListener('click', () => configModal.classList.add('hidden'));
+    saveConfigBtn.addEventListener('click', () => {
+      configModal.classList.add('hidden');
+      appendMessage('jarvis', 'Configuration saved.');
+      speakText('Configuration saved, Boss.');
+    });
+
+    apiKeyBtn.addEventListener('click', () => apiModal.classList.remove('hidden'));
+    closeApiBtn.addEventListener('click', () => apiModal.classList.add('hidden'));
+    saveApiBtn.addEventListener('click', () => {
+      customApiKey = customApiKeyInput.value.trim();
+      localStorage.setItem('jarvis_api_key', customApiKey);
+      apiModal.classList.add('hidden');
+      triggerHaptic('success');
+      appendMessage('jarvis', 'API Key updated successfully.');
+    });
+  </script>
+</body>
+</html>
